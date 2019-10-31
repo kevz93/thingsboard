@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import * as L from 'leaflet';
 import 'leaflet-providers';
+import 'leaflet.markercluster/dist/leaflet.markercluster'
 
 export default class TbOpenStreetMap {
 
-	constructor($containerElement, utils, initCallback, defaultZoomLevel, dontFitMapBounds, disableScrollZooming, minZoomLevel, mapProvider, credentials) {
+	constructor($containerElement, utils, initCallback, defaultZoomLevel, dontFitMapBounds, disableScrollZooming, minZoomLevel, mapProvider, credentials, defaultCenterPosition, markerClusteringSetting) {
 
 		this.utils = utils;
 		this.defaultZoomLevel = defaultZoomLevel;
 		this.dontFitMapBounds = dontFitMapBounds;
 		this.minZoomLevel = minZoomLevel;
 		this.tooltips = [];
+		this.isMarketCluster = markerClusteringSetting.isMarketCluster;
 
 		if (!mapProvider) {
 			mapProvider = {
@@ -38,7 +42,8 @@ export default class TbOpenStreetMap {
 			credentials.app_code = credentials.app_code || "p6NPiITB3Vv0GMUFnkLOOg";
 		}
 
-		this.map = L.map($containerElement[0]).setView([0, 0], this.defaultZoomLevel || 8);
+        defaultCenterPosition = defaultCenterPosition || [0,0];
+		this.map = L.map($containerElement[0]).setView(defaultCenterPosition, this.defaultZoomLevel || 8);
 
 		if (disableScrollZooming) {
 			this.map.scrollWheelZoom.disable();
@@ -46,6 +51,11 @@ export default class TbOpenStreetMap {
 
 		var tileLayer = mapProvider.isCustom ? L.tileLayer(mapProvider.name) : L.tileLayer.provider(mapProvider.name, credentials);
 		tileLayer.addTo(this.map);
+
+		if (this.isMarketCluster) {
+			this.markersCluster = L.markerClusterGroup(markerClusteringSetting);
+			this.map.addLayer(this.markersCluster);
+		}
 
 		if (initCallback) {
 			setTimeout(initCallback, 0); //eslint-disable-line
@@ -55,6 +65,10 @@ export default class TbOpenStreetMap {
 
 	inited() {
 		return angular.isDefined(this.map);
+	}
+
+	getContainer() {
+		return this.isMarketCluster ? this.markersCluster : this.map;
 	}
 
 	updateMarkerLabel(marker, settings) {
@@ -146,7 +160,7 @@ export default class TbOpenStreetMap {
 				marker.bindTooltip('<div style="color: ' + settings.labelColor + ';"><b>' + settings.labelText + '</b></div>',
 					{className: 'tb-marker-label', permanent: true, direction: 'top', offset: marker.tooltipOffset});
 			}
-			marker.addTo(opMap.map);
+			marker.addTo(opMap.getContainer());
 		});
 
 		if (settings.displayTooltip) {
@@ -161,7 +175,7 @@ export default class TbOpenStreetMap {
 	}
 
 	removeMarker(marker) {
-		this.map.removeLayer(marker);
+		this.getContainer().removeLayer(marker);
 	}
 
 	createTooltip(marker, dsIndex, settings, markerArgs) {

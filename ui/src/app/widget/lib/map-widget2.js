@@ -48,9 +48,15 @@ export default class TbMapWidgetV2 {
 		};
 
 		if (settings.defaultZoomLevel) {
-			if (settings.defaultZoomLevel > 0 && settings.defaultZoomLevel < 21) {
+			if (settings.defaultZoomLevel >= 0 && settings.defaultZoomLevel < 21) {
 				this.defaultZoomLevel = Math.floor(settings.defaultZoomLevel);
 			}
+		}
+
+		if (angular.isUndefined(settings.defaultCenterPosition)) {
+            settings.defaultCenterPosition = [0,0];
+		} else if (angular.isString(settings.defaultCenterPosition)) {
+            settings.defaultCenterPosition = settings.defaultCenterPosition.split(',').map(x => +x);
 		}
 
 		this.dontFitMapBounds = settings.fitMapBounds === false;
@@ -62,6 +68,46 @@ export default class TbMapWidgetV2 {
 		this.configureLocationsSettings();
 
 		var minZoomLevel = this.drawRoutes ? 18 : 15;
+
+		let markerClusteringSetting = {
+			isMarketCluster: false
+		};
+
+		if (settings.useClusterMarkers === true){
+			if (mapProvider === 'google-map' || mapProvider === 'tencent-map') {
+				markerClusteringSetting = {
+					isMarketCluster: true,
+					zoomOnClick: settings.zoomOnClick,
+					averageCenter: true
+				};
+				if(angular.isDefined(settings.maxZoom) && settings.maxZoom >= 0 && settings.maxZoom < 19){
+					markerClusteringSetting.maxZoom = Math.floor(settings.maxZoom);
+				}
+				if(angular.isDefined(settings.gridSize) && settings.gridSize > 0){
+					markerClusteringSetting.gridSize = Math.floor(settings.gridSize);
+				}
+				if(angular.isDefined(settings.minimumClusterSize) && settings.minimumClusterSize > 1){
+					markerClusteringSetting.minimumClusterSize = Math.ceil(settings.minimumClusterSize);
+				}
+			} else if(mapProvider === 'openstreet-map' || mapProvider === 'here') {
+				markerClusteringSetting = {
+					isMarketCluster: true,
+					zoomToBoundsOnClick: settings.zoomOnClick,
+					showCoverageOnHover: settings.showCoverageOnHover,
+					removeOutsideVisibleBounds: settings.removeOutsideVisibleBounds,
+					animate: settings.animate,
+					chunkedLoading: settings.chunkedLoading
+				};
+				if(angular.isDefined(settings.maxClusterRadius) && settings.maxClusterRadius > 0){
+					markerClusteringSetting.maxClusterRadius = Math.floor(settings.maxClusterRadius);
+				}
+				if(angular.isDefined(settings.maxZoom) && settings.maxZoom >= 0 && settings.maxZoom < 19){
+					markerClusteringSetting.disableClusteringAtZoom = Math.floor(settings.maxZoom);
+				}
+			}
+		}
+
+
 
 
 		var initCallback = function () {
@@ -78,9 +124,9 @@ export default class TbMapWidgetV2 {
 			tbMap.tooltipActionsMap[descriptor.name] = descriptor;
 		});
 
-		let openStreetMapProvider = {};
+        let openStreetMapProvider = {};
 		if (mapProvider === 'google-map') {
-			this.map = new TbGoogleMap($element, this.utils, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, settings.disableScrollZooming, minZoomLevel, settings.gmApiKey, settings.gmDefaultMapType);
+			this.map = new TbGoogleMap($element, this.utils, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, settings.disableScrollZooming, minZoomLevel, settings.gmApiKey, settings.gmDefaultMapType, settings.defaultCenterPosition, markerClusteringSetting);
 		} else if (mapProvider === 'openstreet-map') {
 			if (settings.useCustomProvider && settings.customProviderTileUrl) {
 				openStreetMapProvider.name = settings.customProviderTileUrl;
@@ -88,19 +134,20 @@ export default class TbMapWidgetV2 {
 			} else {
 				openStreetMapProvider.name = settings.mapProvider;
 			}
-			this.map = new TbOpenStreetMap($element, this.utils, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, settings.disableScrollZooming, minZoomLevel, openStreetMapProvider);
+			this.map = new TbOpenStreetMap($element, this.utils, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, settings.disableScrollZooming, minZoomLevel, openStreetMapProvider, null,settings.defaultCenterPosition, markerClusteringSetting);
 		} else if (mapProvider === 'here') {
 			openStreetMapProvider.name = settings.mapProvider;
-			this.map = new TbOpenStreetMap($element, this.utils, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, settings.disableScrollZooming, minZoomLevel, openStreetMapProvider, settings.credentials);
+			this.map = new TbOpenStreetMap($element, this.utils, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, settings.disableScrollZooming, minZoomLevel, openStreetMapProvider, settings.credentials, settings.defaultCenterPosition, markerClusteringSetting);
 		} else if (mapProvider === 'image-map') {
 			this.map = new TbImageMap(this.ctx, $element, this.utils, initCallback,
 				settings.mapImageUrl,
 				settings.disableScrollZooming,
 				settings.posFunction,
 				settings.imageEntityAlias,
-				settings.imageUrlAttribute);
+				settings.imageUrlAttribute,
+                settings.useDefaultCenterPosition ? settings.defaultCenterPosition: null);
 		} else if (mapProvider === 'tencent-map') {
-			this.map = new TbTencentMap($element, this.utils, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, settings.disableScrollZooming, minZoomLevel, settings.tmApiKey, settings.tmDefaultMapType);
+			this.map = new TbTencentMap($element, this.utils, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, settings.disableScrollZooming, minZoomLevel, settings.tmApiKey, settings.tmDefaultMapType, settings.defaultCenterPosition, markerClusteringSetting);
 		}
 
 
@@ -156,7 +203,8 @@ export default class TbMapWidgetV2 {
 
 		this.locationSettings.showLabel = this.ctx.settings.showLabel !== false;
 		this.locationSettings.displayTooltip = this.ctx.settings.showTooltip !== false;
-		this.locationSettings.displayTooltipAction = this.ctx.settings.showTooltipAction && this.ctx.settings.showTooltipAction.length ? this.ctx.settings.showTooltipAction : "click";
+        this.locationSettings.useDefaultCenterPosition = this.ctx.settings.useDefaultCenterPosition === true;
+        this.locationSettings.displayTooltipAction = this.ctx.settings.showTooltipAction && this.ctx.settings.showTooltipAction.length ? this.ctx.settings.showTooltipAction : "click";
 		this.locationSettings.autocloseTooltip = this.ctx.settings.autocloseTooltip !== false;
 		this.locationSettings.showPolygon = this.ctx.settings.showPolygon === true;
 		this.locationSettings.labelColor = this.ctx.widgetConfig.color || '#000000';
@@ -455,8 +503,8 @@ export default class TbMapWidgetV2 {
 		}
 
 		function createUpdatePolygon(location, dataMap) {
-			if (location.settings.showPolygon && dataMap.dsDataMap[location.dsIndex][location.settings.polygonKeyName] !== null) {
-				let polygonLatLngsRaw = angular.fromJson(dataMap.dsDataMap[location.dsIndex][location.settings.polygonKeyName]);
+            if (location.settings.showPolygon && dataMap.dsDataMap[location.dsIndex][location.settings.polygonKeyName] !== null) {
+                let polygonLatLngsRaw = angular.fromJson(dataMap.dsDataMap[location.dsIndex][location.settings.polygonKeyName]);
 				let polygonLatLngs = !polygonLatLngsRaw || mapPolygonArray(polygonLatLngsRaw);
 				if (!location.polygon && polygonLatLngs.length > 0) {
 					location.polygon = tbMap.map.createPolygon(polygonLatLngs, location.settings, location, function (event) {
@@ -476,7 +524,7 @@ export default class TbMapWidgetV2 {
 		}
 
 		function loadLocations(data, datasources) {
-			var bounds = tbMap.map.createBounds();
+            var bounds = tbMap.locationSettings.useDefaultCenterPosition ? tbMap.map.createBounds().extend(tbMap.map.map.getCenter()) : tbMap.map.createBounds();
 			tbMap.locations = [];
 			var dataMap = toLabelValueMap(data, datasources);
 			var currentDatasource = null;
@@ -521,12 +569,13 @@ export default class TbMapWidgetV2 {
 					}
 					tbMap.locations.push(location);
 					updateLocation(location, data, dataMap);
-
-					if (location.polyline) {
-						tbMap.map.extendBounds(bounds, location.polyline);
-					} else if (location.marker) {
-						tbMap.map.extendBoundsWithMarker(bounds, location.marker);
-					}
+					if (!tbMap.locationSettings.useDefaultCenterPosition) {
+                        if (location.polyline) {
+                            tbMap.map.extendBounds(bounds, location.polyline);
+                        } else if (location.marker) {
+                            tbMap.map.extendBoundsWithMarker(bounds, location.marker);
+                        }
+                    }
 					latIndex = -1;
 					lngIndex = -1;
 				}
@@ -548,7 +597,9 @@ export default class TbMapWidgetV2 {
 					});
 					tbMap.locations.push(location);
 					createUpdatePolygon(location, dataMap);
-					tbMap.map.extendBounds(bounds, location.polygon);
+					if (!tbMap.locationSettings.useDefaultCenterPosition) {
+                        tbMap.map.extendBounds(bounds, location.polygon);
+                    }
 				}
 			});
 
@@ -576,19 +627,21 @@ export default class TbMapWidgetV2 {
 
 		function updateLocations(data, datasources) {
 			var locationsChanged = false;
-			var bounds = tbMap.map.createBounds();
+			var bounds = tbMap.locationSettings.useDefaultCenterPosition ? tbMap.map.createBounds().extend(tbMap.map.map.getCenter()) : tbMap.map.createBounds();
 			var dataMap = toLabelValueMap(data, datasources);
 			for (var p = 0; p < tbMap.locations.length; p++) {
 				var location = tbMap.locations[p];
 				locationsChanged |= updateLocation(location, data, dataMap);
-				createUpdatePolygon(location, dataMap);
-				if (location.polyline) {
-					tbMap.map.extendBounds(bounds, location.polyline);
-				} else if (location.marker) {
-					tbMap.map.extendBoundsWithMarker(bounds, location.marker);
-				} else if (location.polygon) {
-					tbMap.map.extendBounds(bounds, location.polygon);
-				}
+                createUpdatePolygon(location, dataMap);
+				if (!tbMap.locationSettings.useDefaultCenterPosition) {
+                    if (location.polyline) {
+                        tbMap.map.extendBounds(bounds, location.polyline);
+                    } else if (location.marker) {
+                        tbMap.map.extendBoundsWithMarker(bounds, location.marker);
+                    } else if (location.polygon) {
+                        tbMap.map.extendBounds(bounds, location.polygon);
+                    }
+                }
 			}
 			if (locationsChanged && tbMap.initBounds) {
 				let dataReceived = datasources.every(
@@ -626,7 +679,8 @@ export default class TbMapWidgetV2 {
 			if (this.subscription.data) {
 				if (!this.locations) {
 					loadLocations(this.subscription.data, this.subscription.datasources);
-				} else {
+
+                } else {
 					updateLocations(this.subscription.data, this.subscription.datasources);
 				}
 				var tooltips = this.map.getTooltips();
@@ -644,22 +698,24 @@ export default class TbMapWidgetV2 {
 			let map = this.map;
 			if (this.locations && this.locations.length > 0) {
 				map.invalidateSize();
-				var bounds = map.createBounds();
-				if (this.markers && this.markers.length>0) {
-					this.markers.forEach(function (marker) {
-						map.extendBoundsWithMarker(bounds, marker);
-					});
-				}
-				if (this.polylines && this.polylines.length>0) {
-					this.polylines.forEach(function (polyline) {
-						map.extendBounds(bounds, polyline);
-					})
-				}
-				if (this.polygons && this.polygons.length > 0) {
-					this.polygons.forEach(function (polygon) {
-						map.extendBounds(bounds, polygon);
-					})
-				}
+				var bounds = this.locationSettings.useDefaultCenterPosition ? map.createBounds().extend(map.map.getCenter()) : map.createBounds();
+				if (!this.locationSettings.useDefaultCenterPosition) {
+                    if (this.markers && this.markers.length > 0) {
+                        this.markers.forEach(function (marker) {
+                            map.extendBoundsWithMarker(bounds, marker);
+                        });
+                    }
+                    if (this.polylines && this.polylines.length > 0) {
+                        this.polylines.forEach(function (polyline) {
+                            map.extendBounds(bounds, polyline);
+                        })
+                    }
+                    if (this.polygons && this.polygons.length > 0) {
+                        this.polygons.forEach(function (polygon) {
+                            map.extendBounds(bounds, polygon);
+                        })
+                    }
+                }
 				map.fitBounds(bounds);
 			}
 		}
@@ -711,6 +767,24 @@ export default class TbMapWidgetV2 {
 			schema.groupInfoes.push({
 				"formIndex":schema.groupInfoes.length,
 				"GroupTitle":"Route Map Settings"
+			});
+		} else if (mapProvider !== 'image-map'){
+			angular.merge(schema.schema.properties, markerClusteringSettingsSchema.schema.properties);
+			schema.schema.required = schema.schema.required.concat(markerClusteringSettingsSchema.schema.required);
+			schema.form.push(markerClusteringSettingsSchema.form);
+			if (mapProvider === 'google-map' || mapProvider === 'tencent-map') {
+				angular.merge(schema.schema.properties, markerClusteringSettingsSchemaGoogle.schema.properties);
+				schema.schema.required = schema.schema.required.concat(markerClusteringSettingsSchemaGoogle.schema.required);
+				schema.form[schema.form.length -1] = schema.form[schema.form.length -1].concat(markerClusteringSettingsSchemaGoogle.form);
+			}
+			if (mapProvider === 'openstreet-map' || mapProvider === 'here') {
+				angular.merge(schema.schema.properties, markerClusteringSettingsSchemaLeaflet.schema.properties);
+				schema.schema.required = schema.schema.required.concat(markerClusteringSettingsSchemaLeaflet.schema.required);
+				schema.form[schema.form.length -1] = schema.form[schema.form.length -1].concat(markerClusteringSettingsSchemaLeaflet.form);
+			}
+			schema.groupInfoes.push({
+				"formIndex":schema.groupInfoes.length,
+				"GroupTitle":"Markers Clustering Settings"
 			});
 		}
 		return schema;
@@ -959,9 +1033,19 @@ const commonMapSettingsSchema =
 			"type": "object",
 			"properties": {
 				"defaultZoomLevel": {
-					"title": "Default map zoom level (1 - 20)",
+					"title": "Default map zoom level (0 - 20)",
 					"type": "number"
 				},
+                "useDefaultCenterPosition": {
+                    "title": "Use default map center position",
+                    "type": "boolean",
+                    "default": false
+                },
+                "defaultCenterPosition": {
+                    "title": "Default map center position (0,0)",
+                    "type": "string",
+					"default" : "0,0"
+                },
 				"fitMapBounds": {
 					"title": "Fit map bounds to cover all markers",
 					"type": "boolean",
@@ -1116,6 +1200,8 @@ const commonMapSettingsSchema =
 		},
 		"form": [
 			"defaultZoomLevel",
+			"useDefaultCenterPosition",
+			"defaultCenterPosition",
 			"fitMapBounds",
 			"disableScrollZooming",
 			"latKeyName",
@@ -1220,6 +1306,103 @@ const routeMapSettingsSchema =
 		"form": [
 			"strokeWeight",
 			"strokeOpacity"
+		]
+	};
+
+const markerClusteringSettingsSchema =
+	{
+		"schema": {
+			"title": "Markers Clustering Configuration",
+			"type": "object",
+			"properties": {
+				"useClusterMarkers": {
+					"title": "Use map markers clustering",
+					"type": "boolean",
+					"default": false
+				},
+				"zoomOnClick": {
+					"title": "Zoom when clicking on a cluster",
+					"type": "boolean",
+					"default": true
+				},
+				"maxZoom": {
+					"title": "The maximum zoom level when a marker can be part of a cluster (0 - 18)",
+					"type": "number"
+				}
+			},
+			"required": []
+		},
+		"form": [
+			"useClusterMarkers",
+			"zoomOnClick",
+			"maxZoom"
+		]
+	};
+
+const markerClusteringSettingsSchemaGoogle =
+	{
+		"schema": {
+			"title": "Marker Clustering Configuration Google",
+			"type": "object",
+			"properties": {
+				"gridSize": {
+					"title": "Maximum radius that a cluster will cover in pixels",
+					"type": "number",
+					"default": 60
+				},
+				"minimumClusterSize": {
+					"title": "The minimum number of markers in a cluster",
+					"type": "number"
+				}
+			},
+			"required": []
+		},
+		"form": [
+			"gridSize",
+			"minimumClusterSize"
+		]
+	};
+
+const markerClusteringSettingsSchemaLeaflet =
+	{
+		"schema": {
+			"title": "Markers Clustering Configuration Leaflet",
+			"type": "object",
+			"properties": {
+				"showCoverageOnHover": {
+					"title": "Show the bounds of markers when mouse over a cluster",
+					"type": "boolean",
+					"default": true
+				},
+				"animate": {
+					"title": "Show animation on markers when zooming",
+					"type": "boolean",
+					"default": true
+				},
+				"maxClusterRadius": {
+					"title": "Maximum radius that a cluster will cover in pixels",
+					"type": "number",
+					"default": 80
+				},
+				"chunkedLoading": {
+					"title": "Use chunks for adding markers so that the page does not freeze",
+					"type": "boolean",
+					"default": false
+				},
+				"removeOutsideVisibleBounds": {
+					"title": "Use lazy load for adding markers",
+					"type": "boolean",
+					"default": true
+				}
+			},
+			"required": []
+		},
+		"form": [
+			"showCoverageOnHover",
+			"animate",
+			"maxClusterRadius",
+			"chunkedLoading",
+			"removeOutsideVisibleBounds"
 		]
 	};
 
