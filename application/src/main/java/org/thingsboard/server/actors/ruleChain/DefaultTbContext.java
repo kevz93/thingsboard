@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.netty.channel.EventLoopGroup;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.StringUtils;
-import org.thingsboard.rule.engine.api.ListeningExecutor;
+import org.thingsboard.common.util.ListeningExecutor;
 import org.thingsboard.rule.engine.api.MailService;
 import org.thingsboard.rule.engine.api.RuleChainTransactionService;
 import org.thingsboard.rule.engine.api.RuleEngineDeviceRpcRequest;
@@ -227,6 +227,27 @@ class DefaultTbContext implements TbContext {
     @Override
     public ScriptEngine createJsScriptEngine(String script, String... argNames) {
         return new RuleNodeJsScriptEngine(mainCtx.getJsSandbox(), nodeCtx.getSelf().getId(), script, argNames);
+    }
+
+    @Override
+    public void logJsEvalRequest() {
+        if (mainCtx.isStatisticsEnabled()) {
+            mainCtx.getJsInvokeRequestsCount().incrementAndGet();
+        }
+    }
+
+    @Override
+    public void logJsEvalResponse() {
+        if (mainCtx.isStatisticsEnabled()) {
+            mainCtx.getJsInvokeResponsesCount().incrementAndGet();
+        }
+    }
+
+    @Override
+    public void logJsEvalFailure() {
+        if (mainCtx.isStatisticsEnabled()) {
+            mainCtx.getJsInvokeFailuresCount().incrementAndGet();
+        }
     }
 
     @Override

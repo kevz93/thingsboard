@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.server.service.update.model;
+package org.thingsboard.server.dao.sql;
 
-import lombok.Data;
+import com.google.common.util.concurrent.SettableFuture;
+import lombok.Getter;
 
-@Data
-public class UpdateMessage {
+public final class TbSqlQueueElement<E> {
+    @Getter
+    private final SettableFuture<Void> future;
+    @Getter
+    private final E entity;
 
-    private final String message;
-    private final boolean isUpdateAvailable;
-
+    public TbSqlQueueElement(SettableFuture<Void> future, E entity) {
+        this.future = future;
+        this.entity = entity;
+    }
 }
+
+

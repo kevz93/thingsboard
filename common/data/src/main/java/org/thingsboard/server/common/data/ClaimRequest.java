@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.server.kafka;
+package org.thingsboard.server.common.data;
 
-import java.util.UUID;
+import lombok.Data;
 
-public interface TbKafkaEnricher<T> {
+@Data
+public class ClaimRequest {
 
-    T enrich(T value, String responseTopic, UUID requestId);
+    private final String secretKey;
 
 }
