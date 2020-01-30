@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2019 The Thingsboard Authors
+ * Copyright © 2016-2020 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.server.dao.sqlts.ts;
+package org.thingsboard.server.dao.sqlts.dictionary;
 
 import org.springframework.data.repository.CrudRepository;
-import org.thingsboard.server.common.data.EntityType;
-import org.thingsboard.server.dao.model.sqlts.ts.TsKvLatestCompositeKey;
-import org.thingsboard.server.dao.model.sqlts.ts.TsKvLatestEntity;
-import org.thingsboard.server.dao.util.SqlDao;
+import org.thingsboard.server.dao.model.sqlts.dictionary.TsKvDictionary;
+import org.thingsboard.server.dao.model.sqlts.dictionary.TsKvDictionaryCompositeKey;
+import org.thingsboard.server.dao.util.PsqlDao;
 
-import java.util.List;
+import java.util.Optional;
 
-@SqlDao
-public interface TsKvLatestRepository extends CrudRepository<TsKvLatestEntity, TsKvLatestCompositeKey> {
+@PsqlDao
+public interface TsKvDictionaryRepository extends CrudRepository<TsKvDictionary, TsKvDictionaryCompositeKey> {
 
-    List<TsKvLatestEntity> findAllByEntityTypeAndEntityId(EntityType entityType, String entityId);
+    Optional<TsKvDictionary> findByKeyId(int keyId);
+
 }

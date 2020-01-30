@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2019 The Thingsboard Authors
+ * Copyright © 2016-2020 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,17 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.thingsboard.server.dao.util.HsqlDao;
 import org.thingsboard.server.dao.util.SqlTsDao;
 
 @Configuration
 @EnableAutoConfiguration
-@ComponentScan("org.thingsboard.server.dao.sqlts.ts")
-@EnableJpaRepositories("org.thingsboard.server.dao.sqlts.ts")
-@EntityScan("org.thingsboard.server.dao.model.sqlts.ts")
+@ComponentScan({"org.thingsboard.server.dao.sqlts.hsql", "org.thingsboard.server.dao.sqlts.latest"})
+@EnableJpaRepositories({"org.thingsboard.server.dao.sqlts.hsql", "org.thingsboard.server.dao.sqlts.latest"})
+@EntityScan({"org.thingsboard.server.dao.model.sqlts.hsql", "org.thingsboard.server.dao.model.sqlts.latest"})
 @EnableTransactionManagement
 @SqlTsDao
-public class SqlTsDaoConfig {
+@HsqlDao
+public class HsqlTsDaoConfig {
 
 }

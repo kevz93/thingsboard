@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2019 The Thingsboard Authors
+ * Copyright © 2016-2020 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import org.thingsboard.server.dao.util.TimescaleDBTsDao;
 
 @Configuration
 @EnableAutoConfiguration
-@ComponentScan("org.thingsboard.server.dao.sqlts.timescale")
-@EnableJpaRepositories("org.thingsboard.server.dao.sqlts.timescale")
-@EntityScan("org.thingsboard.server.dao.model.sqlts.timescale")
+@ComponentScan({"org.thingsboard.server.dao.sqlts.timescale", "org.thingsboard.server.dao.sqlts.latest"})
+@EnableJpaRepositories({"org.thingsboard.server.dao.sqlts.timescale", "org.thingsboard.server.dao.sqlts.dictionary", "org.thingsboard.server.dao.sqlts.latest"})
+@EntityScan({"org.thingsboard.server.dao.model.sqlts.timescale", "org.thingsboard.server.dao.model.sqlts.dictionary", "org.thingsboard.server.dao.model.sqlts.latest"})
 @EnableTransactionManagement
 @TimescaleDBTsDao
 public class TimescaleDaoConfig {

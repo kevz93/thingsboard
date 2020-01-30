@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2019 The Thingsboard Authors
+ * Copyright © 2016-2020 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -359,6 +359,7 @@ public class ModelConstants {
 
     public static final String PARTITION_COLUMN = "partition";
     public static final String KEY_COLUMN = "key";
+    public static final String KEY_ID_COLUMN = "key_id";
     public static final String TS_COLUMN = "ts";
 
     /**

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2019 The Thingsboard Authors
+ * Copyright © 2016-2020 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,16 @@ package org.thingsboard.server.service.install;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.thingsboard.server.dao.util.PsqlDao;
 import org.thingsboard.server.dao.util.SqlTsDao;
 
 @Service
 @SqlTsDao
+@PsqlDao
 @Profile("install")
-public class SqlTsDatabaseSchemaService extends SqlAbstractDatabaseSchemaService
+public class PsqlTsDatabaseSchemaService extends SqlAbstractDatabaseSchemaService
         implements TsDatabaseSchemaService {
-    public SqlTsDatabaseSchemaService() {
-        super("schema-ts.sql", null);
+    public PsqlTsDatabaseSchemaService() {
+        super("schema-ts-psql.sql", null);
     }
 }
